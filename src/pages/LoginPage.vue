@@ -118,6 +118,7 @@
               <q-checkbox v-model="rememberMe" label="Remember me" color="primary" />
               <a
                 href="#"
+                @click.prevent="showForgotPasswordDialog = true"
                 class="text-primary text-weight-bold hover-underline"
                 style="text-decoration: none"
                 >Forgot Password?</a
@@ -148,6 +149,59 @@
         </div>
       </div>
     </div>
+
+    <!-- Forgot Password Dialog -->
+    <q-dialog v-model="showForgotPasswordDialog" persistent>
+      <q-card style="min-width: 400px" class="rounded-12">
+        <q-card-section class="row items-center q-pb-none border-bottom">
+          <div class="text-h6 text-weight-bold">Reset Password</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="q-pt-md">
+          <div class="text-body2 text-grey-7 q-mb-md">
+            Enter your email address to request a new password from the Administrator.
+          </div>
+          <q-form @submit.prevent="handleForgotPassword" class="q-gutter-md">
+            <div>
+              <q-input
+                v-model="forgotEmail"
+                outlined
+                dense
+                color="primary"
+                class="custom-input"
+                type="email"
+                placeholder="Email Address"
+                :rules="[(val) => !!val || 'Email is required']"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mail" />
+                </template>
+              </q-input>
+            </div>
+
+            <div class="row justify-end q-mt-lg">
+              <q-btn
+                flat
+                label="Cancel"
+                color="grey-8"
+                v-close-popup
+                class="q-mr-sm text-weight-bold"
+              />
+              <q-btn
+                unelevated
+                label="Send Request"
+                type="submit"
+                color="primary"
+                class="rounded-borders hover-scale text-weight-bold"
+                :loading="sendingResetLink"
+              />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -155,7 +209,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from 'src/boot/supabase'
+import { useQuasar } from 'quasar'
 
+const $q = useQuasar()
 const router = useRouter()
 
 const email = ref('')
@@ -166,6 +222,49 @@ const loading = ref(false)
 
 const errorMsg = ref('')
 const successMsg = ref('')
+
+const showForgotPasswordDialog = ref(false)
+const forgotEmail = ref('')
+const sendingResetLink = ref(false)
+
+const handleForgotPassword = async () => {
+  sendingResetLink.value = true
+  try {
+    // Check if user exists and add request implicitly on the backend via RPC (Security Definer to bypass RLS)
+    const { error } = await supabase.rpc('request_password_reset', {
+      user_email: forgotEmail.value,
+    })
+
+    if (error) {
+      if (error.message.includes('No account found')) {
+        throw new Error('No account found with this email address.')
+      }
+      throw error
+    }
+
+    // Success
+    showForgotPasswordDialog.value = false
+
+    $q.dialog({
+      title: 'Request Sent',
+      message:
+        'Your password reset request has been successfully sent to the Administrator. They will provide a new password shortly.',
+      color: 'positive',
+      ok: {
+        label: 'Got it',
+        color: 'primary',
+        unelevated: true,
+      },
+    })
+
+    forgotEmail.value = ''
+  } catch (error) {
+    console.error('Error sending reset request:', error)
+    errorMsg.value = error.message || 'Failed to send reset request'
+  } finally {
+    sendingResetLink.value = false
+  }
+}
 
 const handleLogin = async () => {
   errorMsg.value = ''

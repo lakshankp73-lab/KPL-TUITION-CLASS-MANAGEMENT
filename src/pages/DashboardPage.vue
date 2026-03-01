@@ -3,10 +3,10 @@
     <!-- Header Summary -->
     <div class="row items-center justify-between q-mb-xl">
       <div>
-        <div class="text-h4 text-weight-bolder text-primary q-mb-xs">Overview</div>
+        <div class="text-h4 text-weight-bolder text-primary q-mb-xs">Institute Overview</div>
         <div class="text-body1 text-grey-7">Here's what's happening in your institute today.</div>
       </div>
-      <div class="row q-gutter-sm">
+      <div class="row q-gutter-md">
         <q-btn
           unelevated
           outline
@@ -28,7 +28,7 @@
 
     <!-- Key Metrics Cards -->
     <div class="row q-col-gutter-lg q-mb-xl">
-      <div class="col-12 col-sm-6 col-md-3" v-for="stat in stats" :key="stat.title">
+      <div class="col-12 col-sm-6 col-md-3" v-for="stat in adminStats" :key="stat.title">
         <q-card
           class="q-pa-md shadow-1 border-subtle stat-card hover-elevate cursor-pointer rounded-12 bg-white flex column justify-between h-full"
         >
@@ -90,6 +90,11 @@
               </tr>
             </thead>
             <tbody>
+              <tr v-if="recentStudents.length === 0">
+                <td colspan="5" class="text-center q-pa-lg text-grey-6">
+                  No recent admissions found.
+                </td>
+              </tr>
               <tr
                 v-for="student in recentStudents"
                 :key="student.id"
@@ -139,7 +144,11 @@
             <div class="text-h6 text-weight-bold text-dark">Upcoming Classes</div>
           </div>
           <q-list separator>
-            <q-item v-for="cls in upcomingClasses" :key="cls.id" class="q-py-md">
+            <q-item v-if="adminUpcomingClasses.length === 0" class="q-pa-xl flex flex-center">
+              <div class="text-grey-6">No upcoming classes.</div>
+            </q-item>
+
+            <q-item v-for="cls in adminUpcomingClasses" :key="cls.id" class="q-py-md">
               <q-item-section avatar>
                 <div
                   class="text-center rounded-borders q-pa-xs bg-grey-2 border-subtle"
@@ -177,35 +186,36 @@
 </template>
 
 <script setup>
-const stats = [
+// ----- ADMIN DATA -----
+const adminStats = [
   {
     title: 'Total Students',
-    value: '1,248',
-    percentage: 12.5,
+    value: '1,240',
+    percentage: 12,
     trendUp: true,
     icon: 'people',
     color: 'primary',
   },
   {
     title: "Today's Attendance",
-    value: '87%',
-    percentage: 2.1,
+    value: '842',
+    percentage: 5,
     trendUp: true,
     icon: 'fact_check',
     color: 'positive',
   },
   {
     title: 'Fee Collection',
-    value: 'Rs 450K',
-    percentage: 5.4,
+    value: 'LKR 2.4M',
+    percentage: 8,
     trendUp: true,
     icon: 'payments',
     color: 'info',
   },
   {
     title: 'Absentee Alerts',
-    value: '42',
-    percentage: 1.1,
+    value: '28',
+    percentage: 2,
     trendUp: false,
     icon: 'warning',
     color: 'warning',
@@ -214,63 +224,47 @@ const stats = [
 
 const recentStudents = [
   {
-    id: 'STU-0891',
-    name: 'Nipun Bandara',
-    initial: 'NB',
-    batch: '2024 A/L Physics',
-    date: 'Oct 12, 2024',
+    id: 'STU-1024',
+    name: 'Kasun Perera',
+    initial: 'K',
+    batch: '2025 A/L',
+    date: 'Oct 12, 2023',
     paid: true,
   },
   {
-    id: 'STU-0892',
-    name: 'Kavindi Perera',
-    initial: 'KP',
-    batch: '2025 O/L Maths',
-    date: 'Oct 12, 2024',
+    id: 'STU-1025',
+    name: 'Nethmi Silva',
+    initial: 'N',
+    batch: '2026 O/L',
+    date: 'Oct 12, 2023',
     paid: false,
   },
   {
-    id: 'STU-0893',
-    name: 'Dasun Silva',
-    initial: 'DS',
-    batch: '2024 A/L Chem',
-    date: 'Oct 11, 2024',
-    paid: true,
-  },
-  {
-    id: 'STU-0894',
-    name: 'Senuri Fernando',
-    initial: 'SF',
-    batch: '2025 O/L Science',
-    date: 'Oct 10, 2024',
+    id: 'STU-1026',
+    name: 'Lahiru Kumara',
+    initial: 'L',
+    batch: '2025 A/L',
+    date: 'Oct 11, 2023',
     paid: true,
   },
 ]
 
-const upcomingClasses = [
+const adminUpcomingClasses = [
   {
     id: 1,
-    time: '02:30',
+    time: '14:30',
     ampm: 'PM',
-    subject: 'A/L Combined Maths',
+    subject: 'Physics Theory',
     grade: '12',
-    teacher: 'Mr. Perera',
+    teacher: 'Amila Kumara',
   },
   {
     id: 2,
-    time: '04:00',
+    time: '16:00',
     ampm: 'PM',
-    subject: 'O/L Science Theory',
-    grade: '11',
-    teacher: 'Mrs. Silva',
-  },
-  {
-    id: 3,
-    time: '06:00',
-    ampm: 'PM',
-    subject: 'A/L Physics Revision',
+    subject: 'Chemistry Revision',
     grade: '13',
-    teacher: 'Dr. Bandara',
+    teacher: 'Saman Perera',
   },
 ]
 </script>
@@ -293,6 +287,12 @@ const upcomingClasses = [
 }
 .line-height-tight {
   line-height: 1.1;
+}
+.hover-bg:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+.transition {
+  transition: background-color 0.2s;
 }
 .hover-scale {
   transition:

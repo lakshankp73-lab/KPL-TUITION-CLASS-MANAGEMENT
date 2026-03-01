@@ -4,8 +4,12 @@
 import { defineConfig } from '#q-app/wrappers'
 import { fileURLToPath } from 'node:url'
 import { config } from 'dotenv'
+import fs from 'node:fs'
 
 config()
+const pkg = JSON.parse(
+  fs.readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf-8'),
+)
 
 export default defineConfig((ctx) => {
   return {
@@ -53,6 +57,7 @@ export default defineConfig((ctx) => {
       env: {
         SUPABASE_URL: process.env.SUPABASE_URL,
         SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+        APP_VERSION: pkg.version,
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
@@ -115,7 +120,7 @@ export default defineConfig((ctx) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: [],
+      plugins: ['Dialog', 'Notify'],
     },
 
     // animations: 'all', // --- includes all animations

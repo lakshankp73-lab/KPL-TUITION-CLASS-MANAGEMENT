@@ -23,6 +23,9 @@ const routes = [
     children: [
       { path: '', component: () => import('pages/DashboardPage.vue') },
       { path: 'profile', component: () => import('pages/ProfilePage.vue') },
+      { path: 'users', component: () => import('pages/UsersPage.vue') },
+      { path: 'roles', component: () => import('pages/RolesPage.vue') },
+      { path: 'requests', component: () => import('pages/PasswordRequestsPage.vue') },
     ],
   },
 

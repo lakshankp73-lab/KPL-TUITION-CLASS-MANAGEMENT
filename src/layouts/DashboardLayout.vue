@@ -37,7 +37,9 @@
               </q-avatar>
               <div class="q-ml-sm q-mr-xs text-weight-medium gt-xs text-left line-height-tight">
                 <div class="text-dark">{{ userName }}</div>
-                <div class="text-caption text-grey-6 text-weight-regular">Administrator</div>
+                <div class="text-caption text-grey-6 text-weight-regular">
+                  {{ userRole || 'Loading...' }}
+                </div>
               </div>
             </div>
           </template>
@@ -68,8 +70,8 @@
     </q-header>
 
     <!-- SIDEBAR (DRAWER) -->
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="bg-white" :width="260">
-      <q-scroll-area class="fit">
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="bg-white column" :width="260">
+      <q-scroll-area class="col">
         <q-list padding class="text-grey-9 q-mt-sm">
           <div class="text-overline q-px-md text-grey-6 text-weight-bolder q-mb-xs">MAIN MENU</div>
 
@@ -92,13 +94,16 @@
             </q-item-section>
           </q-item>
 
-          <q-separator class="q-my-md" />
-          <div class="text-overline q-px-md text-grey-6 text-weight-bolder q-mb-xs">
+          <q-separator class="q-my-md" v-if="filteredAdminLinks.length > 0" />
+          <div
+            class="text-overline q-px-md text-grey-6 text-weight-bolder q-mb-xs"
+            v-if="filteredAdminLinks.length > 0"
+          >
             ADMINISTRATION
           </div>
 
           <q-item
-            v-for="link in adminLinks"
+            v-for="link in filteredAdminLinks"
             :key="link.title"
             clickable
             v-ripple
@@ -116,6 +121,14 @@
           </q-item>
         </q-list>
       </q-scroll-area>
+
+      <!-- System Version at the bottom -->
+      <div
+        class="q-pa-md text-center text-caption text-grey-5 text-weight-medium"
+        style="border-top: 1px solid rgba(0, 0, 0, 0.05)"
+      >
+        KPL EDU System v{{ appVersion }}
+      </div>
     </q-drawer>
 
     <!-- MAIN PAGE CONTENT -->
@@ -130,6 +143,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from 'src/boot/supabase'
 
+const appVersion = process.env.APP_VERSION || '0.0.1'
+
 const router = useRouter()
 const leftDrawerOpen = ref(false)
 const user = ref(null)
@@ -138,17 +153,70 @@ const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
+// Sidebar links configuration suitable for a Tuition Management System
+const mainLinks = [{ title: 'Dashboard', icon: 'dashboard', path: '/dashboard' }]
+
+const adminLinks = [
+  {
+    title: 'User Management',
+    icon: 'manage_accounts',
+    path: '/dashboard/users',
+    permission: 'manage_users',
+  },
+  {
+    title: 'Roles & Permissions',
+    icon: 'admin_panel_settings',
+    path: '/dashboard/roles',
+    permission: 'manage_roles',
+  },
+  {
+    title: 'Password Requests',
+    icon: 'password',
+    path: '/dashboard/requests',
+    permission: 'manage_users', // Admins with user management will handle this
+  },
+]
+
+const permissions = ref([])
+const userRole = ref('Student') // default
+
+const filteredAdminLinks = computed(() => {
+  // Always show all links if Administrator just in case, but rely on permissions ideally
+  if (userRole.value === 'Administrator') return adminLinks
+
+  return adminLinks.filter((link) => {
+    return permissions.value.includes(link.permission)
+  })
+})
+
 onMounted(async () => {
   const {
     data: { session },
   } = await supabase.auth.getSession()
+
   if (session?.user) {
     user.value = session.user
+    userRole.value = user.value.user_metadata?.role || 'Student'
+
+    // Fetch permissions from roles table
+    try {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('permissions')
+        .eq('name', userRole.value)
+        .single()
+
+      if (!error && data) {
+        permissions.value = data.permissions || []
+      }
+    } catch (e) {
+      console.error('Error fetching role permissions', e)
+    }
   }
 })
 
 const userName = computed(() => {
-  return user.value?.user_metadata?.full_name || 'Administrator'
+  return user.value?.user_metadata?.full_name || 'User'
 })
 
 const userInitials = computed(() => {
@@ -169,22 +237,6 @@ const handleLogout = async () => {
     console.error('Logout error:', err)
   }
 }
-
-// Sidebar links configuration suitable for a Tuition Management System
-const mainLinks = [
-  { title: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
-  { title: 'Students', icon: 'people', path: '/dashboard/students' },
-  { title: 'Classes & Batches', icon: 'class', path: '/dashboard/classes' },
-  { title: 'Attendance', icon: 'fact_check', path: '/dashboard/attendance' },
-  { title: 'Fees Collection', icon: 'payments', path: '/dashboard/fees' },
-  { title: 'Exams & Results', icon: 'leaderboard', path: '/dashboard/exams' },
-]
-
-const adminLinks = [
-  { title: 'Staff Directory', icon: 'badge', path: '/dashboard/staff' },
-  { title: 'Reports', icon: 'insert_chart', path: '/dashboard/reports' },
-  { title: 'Settings', icon: 'settings', path: '/dashboard/settings' },
-]
 </script>
 
 <style scoped lang="scss">
